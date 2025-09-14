@@ -8,7 +8,7 @@
     <div class="row">
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-start">
-                <span class="badge bg-info">
+                <span class="badge bg-dark fs-6">
                     <i class="bi bi-clock-history me-1"></i>
                     Last Update: {{ $lastRow['time'] ?? '-' }}
                 </span>
@@ -18,7 +18,7 @@
             <div class="mb-3 text-end">
                 @foreach (['15m', '1h', '1d', '1w', '1m', '1y'] as $r)
                     <a href="?range={{ $r }}"
-                        class="btn btn-sm btn-outline-primary {{ $range == $r ? 'active' : '' }}">
+                        class="btn btn-sm btn-outline-dark {{ $range == $r ? 'active' : '' }}">
                         {{ strtoupper($r) }}
                     </a>
                 @endforeach

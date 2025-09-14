@@ -15,7 +15,7 @@
 
             {{-- Buttons --}}
             <div class="mt-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-dark">
                     <i class="bi bi-check-circle me-1"></i> Save
                 </button>
                 <a href="{{ route('sites.index') }}" class="btn btn-secondary">

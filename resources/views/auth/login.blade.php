@@ -4,8 +4,12 @@
 
 @section('content')
 <div class="card shadow-sm rounded p-4">
-    <h3 class="fw-bold mb-3 text-center">Login</h3>
+    {{-- Judul dengan border-bottom menyatu --}}
+    <div class="pb-2 mb-4 border-bottom text-center">
+        <h3 class="fw-bold mb-0">Login</h3>
+    </div>
 
+    {{-- Error --}}
     @if ($errors->any())
         <div class="alert alert-danger small">
             <ul class="mb-0 ps-3">
@@ -16,6 +20,7 @@
         </div>
     @endif
 
+    {{-- Form Login --}}
     <form method="POST" action="{{ url('/login') }}">
         @csrf
         <div class="mb-3">
@@ -28,7 +33,7 @@
             <input type="password" name="password" class="form-control" required>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Login</button>
+        <button type="submit" class="btn btn-dark w-100">Login</button>
     </form>
 </div>
 @endsection

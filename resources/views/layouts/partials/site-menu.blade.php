@@ -18,7 +18,7 @@
 
             @foreach ($menuMap as $key => $item)
                 <a href="{{ url("/dashboard/$currentSite/$key") }}"
-                    class="btn btn-sm d-flex align-items-center gap-1 {{ $key === $activeKey ? 'btn-primary' : 'btn-outline-primary' }}">
+                    class="btn btn-sm d-flex align-items-center gap-1 {{ $key === $activeKey ? 'btn-dark' : 'btn-outline-dark' }}">
                     <i class="bi {{ $item['icon'] }}"></i>
                     {{ $item['label'] }}
                 </a>

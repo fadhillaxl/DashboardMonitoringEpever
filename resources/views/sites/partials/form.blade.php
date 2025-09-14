@@ -1,5 +1,5 @@
 <div class="mb-3">
-    <label class="form-label" for="nama_site">Nama Site <span class="text-danger">*</span></label>
+    <label class="form-label fw-bold" for="nama_site">Nama Site <span class="text-danger">*</span></label>
     <input type="text" 
            id="nama_site" 
            name="nama_site" 
@@ -12,7 +12,7 @@
 </div>
 
 <div class="mb-3">
-    <label class="form-label" for="alamat_lengkap">Alamat Lengkap</label>
+    <label class="form-label fw-bold" for="alamat_lengkap">Alamat Lengkap</label>
     <textarea id="alamat_lengkap" 
               name="alamat_lengkap" 
               class="form-control @error('alamat_lengkap') is-invalid @enderror" 
@@ -23,7 +23,7 @@
 </div>
 
 <div class="mb-3">
-    <label class="form-label" for="lokasi">Lokasi <span class="text-danger">*</span></label>
+    <label class="form-label fw-bold" for="lokasi">Lokasi <span class="text-danger">*</span></label>
     <input type="text" 
            id="lokasi" 
            name="lokasi" 
@@ -36,7 +36,7 @@
 </div>
 
 <div class="mb-3">
-    <label class="form-label" for="pic">PIC</label>
+    <label class="form-label fw-bold" for="pic">PIC</label>
     <input type="text" 
            id="pic" 
            name="pic" 
@@ -48,7 +48,7 @@
 </div>
 
 <div class="mb-3">
-    <label class="form-label" for="mac_address">MAC Address <span class="text-danger">*</span></label>
+    <label class="form-label fw-bold" for="mac_address">MAC Address <span class="text-danger">*</span></label>
     <input type="text" 
            id="mac_address" 
            name="mac_address" 

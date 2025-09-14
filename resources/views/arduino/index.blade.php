@@ -7,15 +7,15 @@
     <div class="row">
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-start">
-                <span class="badge bg-info fs-6">
+                <span class="badge bg-dark fs-6">
                     <i class="bi bi-clock-history me-1"></i>
                     Last Update: {{ $time ?? '-' }}
                 </span>
             </div>
         </div>
         <div class="col col-12 col-md-6 text-end">
-            <a href="" class="btn btn-sm btn-primary mb-3">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
+            <a href="" class="btn btn-sm btn-secondary mb-3">
+                <i class="bi bi-arrow-clockwise"> Refresh</i>
             </a>
         </div>
     </div>

@@ -8,14 +8,14 @@
     <div class="row">
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-start">
-                <span class="badge bg-info">Last Update: {{ $lastRow['time'] ?? '-' }}</span>
+                <span class="badge bg-dark fs-6">Last Update: {{ $lastRow['time'] ?? '-' }}</span>
             </div>
         </div>
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-end">
                 @foreach ($availableRanges as $r)
                     <a href="?range={{ $r }}"
-                        class="btn btn-sm btn-outline-primary {{ $range == $r ? 'active' : '' }}">
+                        class="btn btn-sm btn-outline-dark {{ $range == $r ? 'active' : '' }}">
                         {{ strtoupper($r) }}
                     </a>
                 @endforeach
@@ -86,8 +86,12 @@
                         },
                         zoom: {
                             zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
                                 mode: 'x'
                             },
                             pan: {
@@ -97,9 +101,14 @@
                         }
                     },
                     scales: {
-                        x: { display: false },
+                        x: {
+                            display: false
+                        },
                         y: {
-                            title: { display: true, text: '{{ $col }}' }
+                            title: {
+                                display: true,
+                                text: '{{ $col }}'
+                            }
                         }
                     }
                 }
