@@ -1,141 +1,150 @@
-# Buka di https://editor.swagger.io/
-
-# Atau via VSCode Extension Arjun.swagger-viewer
-# Klik kanan pada file Swagger.yaml, lalu preview swagger
-
 openapi: 3.0.3
 info:
-  title: Solar Sensor API
+  title: IoT Relay & Sensors API
   version: 1.0.0
-  description: >
-    API untuk menerima data sensor dari berbagai perangkat (epever, RS485, Arduino).  
-    API ini menggunakan header `IOT-API-KEY` untuk autentikasi dan memvalidasi `mac_address` yang perlu di daftarkan terlebih dahulu.
+  description: API untuk komunikasi dengan perangkat IoT (Relay & Sensors).
 servers:
-  - url: http://103.151.221.230:9096/api
-    description: Development Cloud Server
-components:
-  securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: IOT-API-KEY
-  schemas:
-    SensorData:
-      type: object
-      required:
-        - mac_address
-        - type
-        - sensors
-      properties:
-        mac_address:
-          type: string
-          description: MAC address perangkat sensor yang terdaftar
-          example: "00:1B:44:11:3A:B7"
-        type:
-          type: string
-          description: Jenis data sensor
-          enum: [epever_data, sensor_rs485, sensor_arduino]
-          example: "epever_data"
-        sensors:
-          type: object
-          description: Data sensor yang dikirim, key-value bebas sesuai type
-          example:
-            voltage: 12.5
-            current: 5.2
-            temperature: 35.1
-    ApiResponseSuccess:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        message:
-          type: string
-          example: "Data Tersimpan"
-    ApiResponseError:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        message:
-          type: string
-          example: "Gagal menyimpan data"
-        error:
-          type: string
-          example: "InfluxDB connection failed"
+  - url: http://http://103.151.221.230:9098/api
+    description: API Server
+
 paths:
-  /sensors:
+  /relay/update:
     post:
-      summary: Simpan data sensor
-      description: >
-        Endpoint ini menerima data sensor dan menyimpannya ke InfluxDB.  
-        Harus menyertakan header `IOT-API-KEY` dan `mac_address` yang valid (Sudah Terdaftar pada Dashboard).
-      security:
-        - ApiKeyAuth: []
+      summary: Update status relay
+      description: Update status koneksi relay (8 channel sekaligus).
+      tags:
+        - Relay
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SensorData'
-            examples:
-              contoh-data:
-                summary: Contoh data sensor
-                value:
-                  mac_address: "00:1B:44:11:3A:B7"
-                  type: "epever_data"
-                  sensors:
+              type: object
+              required:
+                - mac_address
+                - relay_connection
+                - relay_condition
+              properties:
+                mac_address:
+                  type: string
+                  example: "AA:BB:CC:DD:EE:FF"
+                relay_connection:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                relay_condition:
+                  type: array
+                  items:
+                    type: integer
+                    enum: [0, 1]
+                  minItems: 8
+                  maxItems: 8
+                  example: [1, 0, 1, 0, 0, 1, 1, 0]
+      responses:
+        '200':
+          description: Update berhasil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        '422':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: failed
+                  message:
+                    type: string
+                    example: "The relay_condition field must have 8 items."
+        '500':
+          description: Server error
+
+  /relay/command:
+    get:
+      summary: Ambil command relay
+      description: Mendapatkan perintah relay (8 channel).
+      tags:
+        - Relay
+      parameters:
+        - in: query
+          name: mac_address
+          required: true
+          schema:
+            type: string
+          example: "AA:BB:CC:DD:EE:FF"
+      responses:
+        '200':
+          description: Berhasil ambil perintah relay
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  relay_command:
+                    type: array
+                    items:
+                      type: integer
+                      enum: [0, 1]
+                    example: [0, 1, 0, 0, 1, 1, 0, 0]
+        '422':
+          description: Validasi gagal
+        '500':
+          description: Server error
+
+  /sensors:
+    post:
+      summary: Simpan data sensor
+      description: Kirim data sensor (Epever, RS485, Arduino) ke server.
+      tags:
+        - Sensors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mac_address
+                - sensors
+                - type
+              properties:
+                mac_address:
+                  type: string
+                  example: "AA:BB:CC:DD:EE:FF"
+                type:
+                  type: string
+                  enum: [epever_data, sensor_rs485, sensor_arduino]
+                  example: epever_data
+                sensors:
+                  type: object
+                  additionalProperties: true
+                  example:
                     voltage: 12.5
-                    current: 5.2
-                    temperature: 35.1
+                    current: 3.2
+                    temperature: 28
       responses:
         '201':
           description: Data berhasil disimpan
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiResponseSuccess'
-              examples:
-                success-example:
-                  summary: Contoh sukses
-                  value:
-                    success: true
-                    message: "Data Tersimpan"
-        '401':
-          description: Unauthorized (API Key invalid atau MAC tidak terdaftar)
-          content:
-            application/json:
-              examples:
-                invalid-api-key:
-                  summary: API Key salah
-                  value:
-                    error: "Unauthorized: Invalid API Key"
-                unregistered-mac:
-                  summary: MAC tidak terdaftar
-                  value:
-                    error: "Unauthorized: MAC Address not registered"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Data Tersimpan"
         '422':
-          description: Validation failed
-          content:
-            application/json:
-              examples:
-                validation-error:
-                  summary: MAC address kosong
-                  value:
-                    success: false
-                    message: "Validation failed"
-                    errors:
-                      mac_address:
-                        - "The mac address field is required."
+          description: Validasi gagal
         '500':
-          description: Internal server error
-          content:
-            application/json:
-              examples:
-                influx-error:
-                  summary: Gagal koneksi Influx
-                  value:
-                    success: false
-                    message: "Gagal menyimpan data"
-                    error: "InfluxDB connection failed"
+          description: Gagal menyimpan data sensor
