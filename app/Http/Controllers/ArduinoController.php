@@ -59,19 +59,24 @@ class ArduinoController extends Controller
         $pressureSections = [
             'Pressure Sensor 1' => [
                 'Bar' => ['pressure_1_bar', 'bi-speedometer'],
-                'PSI' => ['pressure_1_psi', 'bi-speedometer2'],
+                'PSI' => ['pressure_1_psi', 'bi-speedometer'],
+                'Pascal' => ['pressure_1_pascal', 'bi-speedometer'],
             ],
             'Pressure Sensor 2' => [
                 'Bar' => ['pressure_2_bar', 'bi-speedometer'],
-                'PSI' => ['pressure_2_psi', 'bi-speedometer2'],
+                'PSI' => ['pressure_2_psi', 'bi-speedometer'],
+                'Pascal' => ['pressure_2_pascal', 'bi-speedometer'],
+
             ],
             'Pressure Sensor 3' => [
                 'Bar' => ['pressure_3_bar', 'bi-speedometer'],
-                'PSI' => ['pressure_3_psi', 'bi-speedometer2'],
+                'PSI' => ['pressure_3_psi', 'bi-speedometer'],
+                'Pascal' => ['pressure_3_pascal', 'bi-speedometer'],
             ],
             'Pressure Sensor 4' => [
                 'Bar' => ['pressure_4_bar', 'bi-speedometer'],
-                'PSI' => ['pressure_4_psi', 'bi-speedometer2'],
+                'PSI' => ['pressure_4_psi', 'bi-speedometer'],
+                'Pascal' => ['pressure_4_pascal', 'bi-speedometer'],
             ],
         ];
 
@@ -144,12 +149,16 @@ class ArduinoController extends Controller
             'anemometer_2_kph' => 'Anemometer 2 (km/h)',
             'pressure_1_bar' => 'Pressure 1 (Bar)',
             'pressure_1_psi' => 'Pressure 1 (PSI)',
+            'pressure_1_pascal' => 'Pressure 1 (Pa)',
             'pressure_2_bar' => 'Pressure 2 (Bar)',
             'pressure_2_psi' => 'Pressure 2 (PSI)',
+            'pressure_2_pascal' => 'Pressure 2 (Pa)',
             'pressure_3_bar' => 'Pressure 3 (Bar)',
             'pressure_3_psi' => 'Pressure 3 (PSI)',
+            'pressure_3_pascal' => 'Pressure 3 (Pa)',
             'pressure_4_bar' => 'Pressure 4 (Bar)',
             'pressure_4_psi' => 'Pressure 4 (PSI)',
+            'pressure_4_pascal' => 'Pressure 4 (Pa)',
         ];
 
         // Hanya ambil kolom valid (skip time & mac_address)

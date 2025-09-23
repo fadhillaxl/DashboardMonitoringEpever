@@ -82,7 +82,7 @@
                     <h5 class="fw-bold mb-3">{{ $section }}</h5>
                     <div class="row">
                         @foreach ($cards as $title => [$field, $icon])
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="card shadow-sm text-center p-3">
                                     <i class="bi {{ $icon }} fs-3 mb-1 text-primary"></i>
                                     <small class="d-block text-muted">{{ $title }}</small>
