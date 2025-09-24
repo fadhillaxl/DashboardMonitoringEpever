@@ -5,12 +5,20 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Relay;
 use App\Models\Site;
+use App\Services\InfluxService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class RelayController extends Controller
 {
+    protected $influx;
+
+    public function __construct(InfluxService $influx)
+    {
+        $this->influx = $influx;
+    }
+
     // POST API: update relay status (8 channel sekaligus)
     public function updateStatus(Request $request)
     {
@@ -38,6 +46,16 @@ class RelayController extends Controller
                     'relay_condition'  => json_encode($request->relay_condition),
                     'update_from_site' => Carbon::now(),
                 ]
+            );
+            
+            $fields = [];
+            foreach ($request->relay_condition as $i => $val) {
+                $fields["relay_$i"] = (int) $val;
+            }
+            $this->influx->write(
+                "relay_data",
+                $fields,
+                ['mac_address' => $request->mac_address],
             );
 
             return response()->json(['status' => 'success']);
