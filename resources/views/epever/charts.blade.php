@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Charts - ' . $mac_address)
+@section('title', 'Epever Charts - ' . $mac_address)
 
 @section('content')
     <h2 class="mb-4 text-start fw-bold">EPEVER Charts - {{ $mac_address }}</h2>

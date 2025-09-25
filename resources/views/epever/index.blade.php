@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'EPEVER - ' . $mac_address)
+@section('title', 'Epever - ' . $mac_address)
 
 @section('content')
     <div class="container">

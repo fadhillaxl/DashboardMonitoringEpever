@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Arduino - ' . $mac_address)
+
 @section('content')
 <div class="container">
     <h2 class="mb-4 text-start fw-bold">Arduino Sensors - {{ $mac_address }}</h2>

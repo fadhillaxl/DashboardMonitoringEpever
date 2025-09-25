@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Water Heater Control Panel - ' . $mac_address)
+@section('title', 'Relay Control Panel - ' . $mac_address)
 
 @section('content')
     <div class="container">

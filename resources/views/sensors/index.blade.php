@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Data Sensor - ' . $mac_address)
+@section('title', 'Modbus Sensor - ' . $mac_address)
 
 @section('content')
     <h2 class="mb-4 text-start fw-bold">Data Sensor - {{ $mac_address }}</h2>
