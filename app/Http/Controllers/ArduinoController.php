@@ -97,74 +97,87 @@ class ArduinoController extends Controller
     public function showCharts($mac_address, Request $request)
     {
         $range = $request->get('range', '15m');
-        $now = now()->toImmutable();
+        $now   = now()->toImmutable();
 
-        // Mapping range ke waktu start
-        $ranges = [
-            '15m' => fn() => $now->subMinutes(15),
-            '1h'  => fn() => $now->subHour(),
-            '1d'  => fn() => $now->subDay(),
-            '1w'  => fn() => $now->subWeek(),
-            '1m'  => fn() => $now->subMonth(),
-            '1y'  => fn() => $now->subYear(),
-        ];
-        $start = ($ranges[$range] ?? $ranges['1h'])();
+        // Ambil custom start & end date (format: Y-m-d H:i / datetime-local)
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
 
-        // Query InfluxDB
+        if ($startDate) {
+            // Jika user input custom start_date
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+
+            if ($endDate) {
+                $end = \Carbon\Carbon::parse($endDate)->toImmutable();
+            } else {
+                // Kalau end kosong → asumsikan sama dengan start (1 hari saja)
+                $end = $start->copy()->endOfDay();
+            }
+        } else {
+            // Default pakai quick range
+            $ranges = [
+                '15m' => fn() => [$now->subMinutes(15), $now],
+                '1h'  => fn() => [$now->subHour(), $now],
+                '1d'  => fn() => [$now->subDay(), $now],
+                '1w'  => fn() => [$now->subWeek(), $now],
+                '1m'  => fn() => [$now->subMonth(), $now],
+                '1y'  => fn() => [$now->subYear(), $now],
+            ];
+            [$start, $end] = ($ranges[$range] ?? $ranges['1h'])();
+        }
+
+        // Query InfluxDB (pakai time range)
         $query = "
         SELECT *
         FROM sensor_arduino
-        WHERE mac_address = '$mac_address' AND time >= '{$start->toIso8601String()}'
+        WHERE mac_address = '$mac_address'
+          AND time >= '{$start->toIso8601String()}'
+          AND time <= '{$end->toIso8601String()}'
         ORDER BY time ASC
     ";
         $result = $this->influx->query($query);
 
-        $series = $result['results'][0]['series'][0] ?? null;
+        $series  = $result['results'][0]['series'][0] ?? null;
         $columns = $series['columns'] ?? [];
         $values  = $series['values'] ?? [];
 
-        // Convert rows ke associative + format time
+        // Convert rows ke associative array + format time
         $rows = array_map(function ($row) use ($columns) {
             $assoc = array_combine($columns, $row);
-
             if (isset($assoc['time'])) {
                 $assoc['time'] = \Carbon\Carbon::parse($assoc['time'])
                     ->setTimezone('Asia/Jakarta')
                     ->format('d M Y H:i:s');
             }
-
             return $assoc;
         }, $values);
 
-        // Ambil last row
         $lastRow = end($rows);
 
         // Mapping nama kolom ke label chart
         $labels = [
-            'light_status' => 'Light Status (ON/OFF)',
-            'light_lux' => 'Light Intensity (Lux)',
-            'anemometer_1_mps' => 'Anemometer 1 (m/s)',
-            'anemometer_1_kph' => 'Anemometer 1 (km/h)',
-            'anemometer_2_mps' => 'Anemometer 2 (m/s)',
-            'anemometer_2_kph' => 'Anemometer 2 (km/h)',
-            'pressure_1_bar' => 'Pressure 1 (Bar)',
-            'pressure_1_psi' => 'Pressure 1 (PSI)',
+            'light_status'      => 'Light Status (ON/OFF)',
+            'light_lux'         => 'Light Intensity (Lux)',
+            'anemometer_1_mps'  => 'Anemometer 1 (m/s)',
+            'anemometer_1_kph'  => 'Anemometer 1 (km/h)',
+            'anemometer_2_mps'  => 'Anemometer 2 (m/s)',
+            'anemometer_2_kph'  => 'Anemometer 2 (km/h)',
+            'pressure_1_bar'    => 'Pressure 1 (Bar)',
+            'pressure_1_psi'    => 'Pressure 1 (PSI)',
             'pressure_1_pascal' => 'Pressure 1 (Pa)',
-            'pressure_2_bar' => 'Pressure 2 (Bar)',
-            'pressure_2_psi' => 'Pressure 2 (PSI)',
+            'pressure_2_bar'    => 'Pressure 2 (Bar)',
+            'pressure_2_psi'    => 'Pressure 2 (PSI)',
             'pressure_2_pascal' => 'Pressure 2 (Pa)',
-            'pressure_3_bar' => 'Pressure 3 (Bar)',
-            'pressure_3_psi' => 'Pressure 3 (PSI)',
+            'pressure_3_bar'    => 'Pressure 3 (Bar)',
+            'pressure_3_psi'    => 'Pressure 3 (PSI)',
             'pressure_3_pascal' => 'Pressure 3 (Pa)',
-            'pressure_4_bar' => 'Pressure 4 (Bar)',
-            'pressure_4_psi' => 'Pressure 4 (PSI)',
+            'pressure_4_bar'    => 'Pressure 4 (Bar)',
+            'pressure_4_psi'    => 'Pressure 4 (PSI)',
             'pressure_4_pascal' => 'Pressure 4 (Pa)',
         ];
 
-        // Hanya ambil kolom valid (skip time & mac_address)
-        $chartColumns = array_filter($columns, fn($col) => !in_array($col, ['time', 'mac_address']));
-
-        $macs_menu_map = Site::pluck('mac_address')->toArray();
+        $chartColumns   = array_filter($columns, fn($col) => !in_array($col, ['time', 'mac_address']));
+        $macs_menu_map  = Site::pluck('mac_address')->toArray();
 
         return view('arduino.charts', compact(
             'mac_address',
@@ -173,7 +186,9 @@ class ArduinoController extends Controller
             'lastRow',
             'macs_menu_map',
             'labels',
-            'chartColumns'
+            'chartColumns',
+            'startDate',
+            'endDate'
         ));
     }
 }

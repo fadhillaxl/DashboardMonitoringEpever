@@ -12,15 +12,44 @@
             </div>
         </div>
         <div class="col col-12 col-md-6">
-            <div class="mb-3 text-end">
-                @foreach ($availableRanges as $r)
-                    <a href="?range={{ $r }}"
-                        class="btn btn-sm btn-outline-dark {{ $range == $r ? 'active' : '' }}">
-                        {{ strtoupper($r) }}
-                    </a>
-                @endforeach
+            <div class="mb-3 text-end d-flex flex-wrap justify-content-end align-items-center gap-2">
+
+                {{-- Quick Range Buttons --}}
+                <div class="btn-group" role="group">
+                    @foreach ($availableRanges as $r)
+                        <a href="?range={{ $r }}"
+                            class="btn btn-sm btn-outline-dark {{ empty($startDate) && $range == $r ? 'active' : '' }}">
+                            {{ strtoupper($r) }}
+                        </a>
+                    @endforeach
+                </div>
+
+                {{-- Custom Range Form --}}
+                <form method="GET" class="row g-2 align-items-center">
+                    <input type="hidden" name="range" value="">
+
+                    <div class="col-12 col-md-auto">
+                        <input type="datetime-local" name="start_date" value="{{ $startDate ?? '' }}"
+                            class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-12 col-md-auto text-center">
+                        <span>to</span>
+                    </div>
+
+                    <div class="col-12 col-md-auto">
+                        <input type="datetime-local" name="end_date" value="{{ $endDate ?? '' }}"
+                            class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-dark btn-sm w-100">Apply</button>
+                    </div>
+                </form>
+
             </div>
         </div>
+
     </div>
 
     @if (count($rows) > 0)

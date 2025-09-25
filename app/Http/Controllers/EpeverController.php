@@ -137,18 +137,26 @@ class EpeverController extends Controller
     public function showCharts($mac_address, Request $request)
     {
         $range = $request->get('range', '15m');
-        $now = now()->toImmutable();
+        $now   = now()->toImmutable();
 
-        // Mapping range ke waktu start
-        $ranges = [
-            '15m' => fn() => $now->subMinutes(15),
-            '1h'  => fn() => $now->subHour(),
-            '1d'  => fn() => $now->subDay(),
-            '1w'  => fn() => $now->subWeek(),
-            '1m'  => fn() => $now->subMonth(),
-            '1y'  => fn() => $now->subYear(),
-        ];
-        $start = ($ranges[$range] ?? $ranges['1h'])();
+        // Ambil custom start & end date
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
+
+        if ($startDate) {
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
+        } else {
+            $ranges = [
+                '15m' => fn() => [$now->subMinutes(15), $now],
+                '1h'  => fn() => [$now->subHour(), $now],
+                '1d'  => fn() => [$now->subDay(), $now],
+                '1w'  => fn() => [$now->subWeek(), $now],
+                '1m'  => fn() => [$now->subMonth(), $now],
+                '1y'  => fn() => [$now->subYear(), $now],
+            ];
+            [$start, $end] = ($ranges[$range] ?? $ranges['1h'])();
+        }
 
         // Query InfluxDB
         $query = "
@@ -158,37 +166,30 @@ class EpeverController extends Controller
         FROM epever_data
         WHERE mac_address = '$mac_address'
           AND time >= '{$start->toIso8601String()}'
+          AND time <= '{$end->toIso8601String()}'
         ORDER BY time ASC
     ";
         $result = $this->influx->query($query);
 
-        $series = $result['results'][0]['series'][0] ?? null;
+        $series  = $result['results'][0]['series'][0] ?? null;
         $columns = $series['columns'] ?? [];
         $values  = $series['values'] ?? [];
 
         // Format data ke associative array
         $rows = array_map(function ($row) use ($columns) {
             $assoc = array_combine($columns, $row);
-
             if (isset($assoc['time'])) {
                 $assoc['time'] = \Carbon\Carbon::parse($assoc['time'])
                     ->setTimezone('Asia/Jakarta')
                     ->format('d M Y H:i:s');
             }
-
             return $assoc;
         }, $values);
 
-        // Ambil last row
         $lastRow = end($rows) ?: [];
-
         $macs_menu_map = Site::pluck('mac_address')->toArray();
-
-        // List range untuk tombol filter
+        $chartColumns  = array_filter($columns, fn($c) => !in_array($c, ['time', 'mac_address']));
         $availableRanges = ['15m', '1h', '1d', '1w', '1m', '1y'];
-
-        // Ambil daftar kolom chart (skip time & mac_address)
-        $chartColumns = array_filter($columns, fn($c) => !in_array($c, ['time', 'mac_address']));
 
         return view('epever.charts', compact(
             'mac_address',
@@ -197,7 +198,9 @@ class EpeverController extends Controller
             'lastRow',
             'macs_menu_map',
             'availableRanges',
-            'chartColumns'
+            'chartColumns',
+            'startDate',
+            'endDate'
         ));
     }
 }

@@ -5,7 +5,7 @@
 @section('content')
     <h2 class="mb-4 text-start fw-bold">Arduino Sensors Charts - {{ $mac_address }}</h2>
 
-    <div class="row">
+    <div class="row justify-content-end mb-3">
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-start">
                 <span class="badge bg-dark fs-6">
@@ -15,15 +15,43 @@
             </div>
         </div>
         <div class="col col-12 col-md-6">
-            <div class="mb-3 text-end">
-                @foreach (['15m', '1h', '1d', '1w', '1m', '1y'] as $r)
-                    <a href="?range={{ $r }}"
-                        class="btn btn-sm btn-outline-dark {{ $range == $r ? 'active' : '' }}">
-                        {{ strtoupper($r) }}
-                    </a>
-                @endforeach
+            <div class="mb-3 text-end d-flex flex-wrap justify-content-end align-items-center gap-2">
+                {{-- Quick Range Buttons --}}
+                <div class="btn-group" role="group">
+                    @foreach (['15m', '1h', '1d', '1w', '1m', '1y'] as $r)
+                        <a href="?range={{ $r }}"
+                            class="btn btn-sm btn-outline-dark {{ $range == $r ? 'active' : '' }}">
+                            {{ strtoupper($r) }}
+                        </a>
+                    @endforeach
+                </div>
+
+                {{-- Custom Range Form --}}
+                <form method="GET" class="row g-2 align-items-center">
+                    <input type="hidden" name="range" value="">
+
+                    <div class="col-12 col-md-auto">
+                        <input type="datetime-local" name="start_date" value="{{ $startDate ?? '' }}"
+                            class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-12 col-md-auto text-center">
+                        <span>to</span>
+                    </div>
+
+                    <div class="col-12 col-md-auto">
+                        <input type="datetime-local" name="end_date" value="{{ $endDate ?? '' }}"
+                            class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-dark btn-sm w-100">Apply</button>
+                    </div>
+                </form>
+
             </div>
         </div>
+
     </div>
 
     @if (count($rows) > 0)
@@ -92,8 +120,12 @@
                         },
                         zoom: {
                             zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
+                                wheel: {
+                                    enabled: true
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
                                 mode: 'x'
                             },
                             pan: {

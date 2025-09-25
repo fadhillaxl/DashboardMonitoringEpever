@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,12 +17,29 @@
         }
 
         @keyframes gradientMove {
-            0% { background-position: 100% 0%; }
-            50% { background-position: 0% 100%; }
-            100% { background-position: 100% 0%; }
+            0% {
+                background-position: 100% 0%;
+            }
+
+            50% {
+                background-position: 0% 100%;
+            }
+
+            100% {
+                background-position: 100% 0%;
+            }
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border-color: inherit !important;
         }
     </style>
 </head>
+
 <body>
 
     <main class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
@@ -30,4 +48,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

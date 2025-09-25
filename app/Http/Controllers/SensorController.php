@@ -96,32 +96,24 @@ class SensorController extends Controller
 
     public function showCharts($mac_address, Request $request)
     {
-        $range = $request->get('range', '15m');
-        $now = now()->toImmutable();
+        $range     = $request->get('range', '15m');
+        $now       = now()->toImmutable();
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
 
-        // Tentukan start time dari range
-        switch ($range) {
-            case '15m':
-                $start = $now->subMinutes(15);
-                break;
-            case '1h':
-                $start = $now->subHour();
-                break;
-            case '1d':
-                $start = $now->subDay();
-                break;
-            case '1w':
-                $start = $now->subWeek();
-                break;
-            case '1m':
-                $start = $now->subMonth();
-                break;
-            case '1y':
-                $start = $now->subYear();
-                break;
-            default:
-                $start = $now->subHour();
-                break;
+        if ($startDate) {
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
+        } else {
+            $ranges = [
+                '15m' => fn() => [$now->subMinutes(15), $now],
+                '1h'  => fn() => [$now->subHour(), $now],
+                '1d'  => fn() => [$now->subDay(), $now],
+                '1w'  => fn() => [$now->subWeek(), $now],
+                '1m'  => fn() => [$now->subMonth(), $now],
+                '1y'  => fn() => [$now->subYear(), $now],
+            ];
+            [$start, $end] = ($ranges[$range] ?? $ranges['1h'])();
         }
 
         // Query InfluxDB
@@ -136,13 +128,14 @@ class SensorController extends Controller
             \"thm-30md-humidity-3\", \"thm-30md-humidity-4\",
             time
         FROM sensor_rs485
-        WHERE mac_address = '$mac_address' AND time >= '{$start->toIso8601String()}'
+        WHERE mac_address = '$mac_address' 
+          AND time >= '{$start->toIso8601String()}' 
+          AND time <= '{$end->toIso8601String()}'
         ORDER BY time ASC
     ";
 
         $result = $this->influx->query($query);
         $series = $result['results'][0]['series'][0] ?? null;
-
         $columns = $series['columns'] ?? [];
         $values  = $series['values'] ?? [];
 
@@ -152,19 +145,15 @@ class SensorController extends Controller
 
             $renamed = [];
             foreach ($assoc as $key => $val) {
-                // Rename pt-100-temperature-* -> Temperature n
                 if (str_starts_with($key, 'pt-100-temperature-')) {
                     $num = str_replace('pt-100-temperature-', '', $key);
                     $renamed["Temperature $num"] = $val;
-                }
-                // Rename thm-30md-humidity-* -> Humidity n
-                elseif (str_starts_with($key, 'thm-30md-humidity-')) {
+                } elseif (str_starts_with($key, 'thm-30md-humidity-')) {
                     $num = str_replace('thm-30md-humidity-', '', $key);
                     $renamed["Humidity $num"] = $val;
                 }
             }
 
-            // Format time jadi local readable
             if (isset($assoc['time'])) {
                 $renamed['time'] = \Carbon\Carbon::parse($assoc['time'])
                     ->setTimezone('Asia/Jakarta')
@@ -174,41 +163,34 @@ class SensorController extends Controller
             return $renamed;
         }, $values);
 
-        // Ambil data terakhir untuk info "Last Update"
         $lastRow = end($rows);
+        $sites   = Site::pluck('mac_address')->toArray();
 
-        // Ambil daftar mac address untuk dropdown/menu
-        $sites = Site::pluck('mac_address')->toArray();
+        // Label mapping
+        $labels = [];
+        foreach (range(1, 14) as $i) {
+            $labels["Temperature $i"] = "Temperature Sensor $i (°C)";
+        }
+        foreach (range(1, 4) as $i) {
+            $labels["Humidity $i"] = "Humidity Sensor $i (%RH)";
+        }
 
-        // Label mapping dipindah ke controller
-        $labels = [
-            'Temperature 1' => 'Temperature Sensor 1 (°C)',
-            'Temperature 2' => 'Temperature Sensor 2 (°C)',
-            'Temperature 3' => 'Temperature Sensor 3 (°C)',
-            'Temperature 4' => 'Temperature Sensor 4 (°C)',
-            'Temperature 5' => 'Temperature Sensor 5 (°C)',
-            'Temperature 6' => 'Temperature Sensor 6 (°C)',
-            'Temperature 7' => 'Temperature Sensor 7 (°C)',
-            'Temperature 8' => 'Temperature Sensor 8 (°C)',
-            'Temperature 9' => 'Temperature Sensor 9 (°C)',
-            'Temperature 10' => 'Temperature Sensor 10 (°C)',
-            'Temperature 11' => 'Temperature Sensor 11 (°C)',
-            'Temperature 12' => 'Temperature Sensor 12 (°C)',
-            'Temperature 13' => 'Temperature Sensor 13 (°C)',
-            'Temperature 14' => 'Temperature Sensor 14 (°C)',
-            'Humidity 1'    => 'Humidity Sensor 1 (%RH)',
-            'Humidity 2'    => 'Humidity Sensor 2 (%RH)',
-            'Humidity 3'    => 'Humidity Sensor 3 (%RH)',
-            'Humidity 4'    => 'Humidity Sensor 4 (%RH)',
-        ];
+        $availableRanges = ['15m', '1h', '1d', '1w', '1m', '1y'];
+        $chartColumns    = array_filter(array_keys($rows[0] ?? []), fn($c) => $c != 'time');
+        $macs_menu_map = Site::pluck('mac_address')->toArray();
 
-        return view('sensors.charts', [
-            'mac_address'   => $mac_address,
-            'rows'          => $rows,
-            'range'         => $range,
-            'lastRow'       => $lastRow,
-            'macs_menu_map' => $sites,
-            'labels'        => $labels,
-        ]);
+
+        return view('sensors.charts', compact(
+            'mac_address',
+            'rows',
+            'range',
+            'lastRow',
+            'macs_menu_map',
+            'labels',
+            'availableRanges',
+            'chartColumns',
+            'startDate',
+            'endDate'
+        ));
     }
 }
