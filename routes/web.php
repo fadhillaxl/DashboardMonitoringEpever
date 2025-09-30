@@ -39,8 +39,12 @@ Route::middleware('auth')->group(function () {
         ->name('arduino.charts');
 
     // Relay routes
-    Route::get('/dashboard/{mac_address}/relayControl',  [RelayController::class, 'controlPage'])->name('relay.control');;
-    Route::post('/dashboard/{mac_address}/relayControl', [RelayController::class, 'updateCommand'])->name('relay.updateCommand');
+    Route::get('/dashboard/{mac_address}/relayControl',  [RelayController::class, 'controlPage'])
+        ->name('relay.control');;
+    Route::post('/dashboard/{mac_address}/relayControl', [RelayController::class, 'updateCommand'])
+        ->name('relay.updateCommand');
+    Route::get('/dashboard/{mac_address}/relayCharts', [RelayController::class, 'showCharts'])
+        ->name('relay.charts');
 
 
     // Site CRUD dengan MAC sebagai parameter untuk show/edit/update/delete

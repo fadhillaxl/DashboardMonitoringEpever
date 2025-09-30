@@ -10,6 +10,7 @@
                     'sensors' => ['label' => 'Sensors', 'icon' => 'bi-speedometer2'],
                     'sensorsCharts' => ['label' => 'Sensors Charts', 'icon' => 'bi-graph-up'],
                     'relayControl' => ['label' => 'Relay Control', 'icon' => 'bi-toggle-on'],
+                    'relayCharts' => ['label' => 'Relay Charts', 'icon' => 'bi-graph-up'],
                 ];
 
                 $currentPath = request()->path();
