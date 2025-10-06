@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Services\InfluxService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
 class SensorController extends Controller
@@ -85,7 +86,7 @@ class SensorController extends Controller
 
         $sites = Site::pluck('mac_address')->toArray();
 
-        return view('sensors.index', [
+        return view('dashboard.sensors.index', [
             'mac_address'    => $mac_address,
             'temperatures'   => $temperatures,
             'humidities'     => $humidities,
@@ -96,8 +97,10 @@ class SensorController extends Controller
 
     public function showCharts($mac_address, Request $request)
     {
-        $range     = $request->get('range', '15m');
-        $now       = now()->toImmutable();
+        $range = $request->get('range', '15m');
+        $now   = now()->toImmutable();
+
+        // Ambil custom start & end date
         $startDate = $request->get('start_date');
         $endDate   = $request->get('end_date');
 
@@ -180,7 +183,7 @@ class SensorController extends Controller
         $macs_menu_map = Site::pluck('mac_address')->toArray();
 
 
-        return view('sensors.charts', compact(
+        return view('dashboard.sensors.charts', compact(
             'mac_address',
             'rows',
             'range',
@@ -192,5 +195,68 @@ class SensorController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    public function exportExcel($mac_address, Request $request)
+    {
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
+
+        // Kalau kosong, fallback ke range default (misal 1 jam terakhir)
+        if ($startDate) {
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
+        } else {
+            $now   = now()->toImmutable();
+            $start = $now->subHour(); // default 1 jam
+            $end   = $now;
+        }
+
+        $query = "
+         SELECT 
+            \"pt-100-temperature-1\", \"pt-100-temperature-2\", \"pt-100-temperature-3\",
+            \"pt-100-temperature-4\", \"pt-100-temperature-5\", \"pt-100-temperature-6\",
+            \"pt-100-temperature-7\", \"pt-100-temperature-8\", \"pt-100-temperature-9\",
+            \"pt-100-temperature-10\", \"pt-100-temperature-11\", \"pt-100-temperature-12\",
+            \"pt-100-temperature-13\", \"pt-100-temperature-14\",
+            \"thm-30md-humidity-1\", \"thm-30md-humidity-2\",
+            \"thm-30md-humidity-3\", \"thm-30md-humidity-4\",
+            time
+        FROM sensor_rs485
+        WHERE mac_address = '$mac_address' 
+          AND time >= '{$start->toIso8601String()}' 
+          AND time <= '{$end->toIso8601String()}'
+        ORDER BY time ASC
+    ";
+        $result = $this->influx->query($query);
+
+        $series  = $result['results'][0]['series'][0] ?? null;
+        $columns = $series['columns'] ?? [];
+        $values  = $series['values'] ?? [];
+
+        $rows = array_map(function ($row) use ($columns) {
+            $assoc = array_combine($columns, $row);
+            if (isset($assoc['time'])) {
+                $assoc['time'] = \Carbon\Carbon::parse($assoc['time'])
+                    ->setTimezone('Asia/Jakarta')
+                    ->format('d M Y H:i:s');
+            }
+            return $assoc;
+        }, $values);
+
+        if (count($rows) === 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'Data Export tidak tersedia untuk rentang waktu yang dipilih.');
+        }
+
+        $rowsArray = array_map(fn($row) => array_values($row), $rows);
+
+        $filename = "RS485Sensors_{$mac_address}_" . now()->format('Y-m-d_H-i-s') . ".xlsx";
+
+        return Excel::download(
+            new \App\Exports\SensorsExport($rowsArray, $columns),
+            $filename
+        );
     }
 }

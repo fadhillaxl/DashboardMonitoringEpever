@@ -25,26 +25,34 @@ Route::middleware('auth')->group(function () {
         ->name('sensors.show');
     Route::get('/dashboard/{mac_address}/sensorsCharts', [SensorController::class, 'showCharts'])
         ->name('sensors.charts');
+    Route::get('/sensors/{mac_address}/export', [SensorController::class, 'exportExcel'])
+        ->name('sensors.excel');
 
     // Epever routes
     Route::get('/dashboard/{mac_address}/epever', [EpeverController::class, 'showSite'])
         ->name('epever.show');
     Route::get('/dashboard/{mac_address}/epeverCharts', [EpeverController::class, 'showCharts'])
         ->name('epever.charts');
+    Route::get('/epever/{mac_address}/export', [EpeverController::class, 'exportExcel'])
+        ->name('epever.excel');
 
     // Arduino routes
     Route::get('/dashboard/{mac_address}/arduino', [ArduinoController::class, 'showSite'])
         ->name('arduino.show');
     Route::get('/dashboard/{mac_address}/arduinoCharts', [ArduinoController::class, 'showCharts'])
         ->name('arduino.charts');
+    Route::get('/arduino/{mac_address}/export', [ArduinoController::class, 'exportExcel'])
+        ->name('arduino.excel');
 
     // Relay routes
     Route::get('/dashboard/{mac_address}/relayControl',  [RelayController::class, 'controlPage'])
-        ->name('relay.control');;
+        ->name('relay.control');
     Route::post('/dashboard/{mac_address}/relayControl', [RelayController::class, 'updateCommand'])
         ->name('relay.updateCommand');
     Route::get('/dashboard/{mac_address}/relayCharts', [RelayController::class, 'showCharts'])
         ->name('relay.charts');
+    Route::get('/relay/{mac_address}/export', [RelayController::class, 'exportExcel'])
+        ->name('relay.excel');
 
 
     // Site CRUD dengan MAC sebagai parameter untuk show/edit/update/delete

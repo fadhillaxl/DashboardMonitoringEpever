@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
 @section('title', 'Modbus Sensor - ' . $mac_address)
 

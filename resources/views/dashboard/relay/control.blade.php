@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
 @section('title', 'Relay Control Panel - ' . $mac_address)
 

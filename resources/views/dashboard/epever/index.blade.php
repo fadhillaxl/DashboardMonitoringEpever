@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
 @section('title', 'Epever - ' . $mac_address)
 

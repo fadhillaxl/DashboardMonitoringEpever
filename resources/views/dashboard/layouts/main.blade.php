@@ -25,12 +25,9 @@
     @php
         $currentSite = request()->segment(2); // ambil site dari URL
     @endphp
-    @include('layouts.partials.navbar')
+    @include('dashboard.layouts.partials.navbar')
 
-
-
-
-    @include('layouts.partials.site-menu')
+    @include('dashboard.layouts.partials.site-menu')
     <div class="container py-4">
 
         @yield('content')

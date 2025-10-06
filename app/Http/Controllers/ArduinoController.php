@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Site;
 use App\Services\InfluxService;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ArduinoController extends Controller
 {
@@ -82,7 +83,7 @@ class ArduinoController extends Controller
 
         $booleanFields = ['light_status'];
 
-        return view('arduino.index', compact(
+        return view('dashboard.arduino.index', compact(
             'mac_address',
             'data',
             'time',
@@ -99,22 +100,14 @@ class ArduinoController extends Controller
         $range = $request->get('range', '15m');
         $now   = now()->toImmutable();
 
-        // Ambil custom start & end date (format: Y-m-d H:i / datetime-local)
+        // Ambil custom start & end date
         $startDate = $request->get('start_date');
         $endDate   = $request->get('end_date');
 
         if ($startDate) {
-            // Jika user input custom start_date
             $start = \Carbon\Carbon::parse($startDate)->toImmutable();
-
-            if ($endDate) {
-                $end = \Carbon\Carbon::parse($endDate)->toImmutable();
-            } else {
-                // Kalau end kosong → asumsikan sama dengan start (1 hari saja)
-                $end = $start->copy()->endOfDay();
-            }
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
         } else {
-            // Default pakai quick range
             $ranges = [
                 '15m' => fn() => [$now->subMinutes(15), $now],
                 '1h'  => fn() => [$now->subHour(), $now],
@@ -178,17 +171,74 @@ class ArduinoController extends Controller
 
         $chartColumns   = array_filter($columns, fn($col) => !in_array($col, ['time', 'mac_address']));
         $macs_menu_map  = Site::pluck('mac_address')->toArray();
+        $availableRanges = ['15m', '1h', '1d', '1w', '1m', '1y'];
 
-        return view('arduino.charts', compact(
+        return view('dashboard.arduino.charts', compact(
             'mac_address',
             'rows',
             'range',
             'lastRow',
             'macs_menu_map',
+            'availableRanges',
             'labels',
             'chartColumns',
             'startDate',
             'endDate'
         ));
+    }
+
+    public function exportExcel($mac_address, Request $request)
+    {
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
+
+        // Kalau kosong, fallback ke range default (misal 1 jam terakhir)
+        if ($startDate) {
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
+        } else {
+            $now   = now()->toImmutable();
+            $start = $now->subHour(); // default 1 jam
+            $end   = $now;
+        }
+
+        $query = "
+        SELECT *
+        FROM sensor_arduino
+        WHERE mac_address = '$mac_address'
+          AND time >= '{$start->toIso8601String()}'
+          AND time <= '{$end->toIso8601String()}'
+        ORDER BY time ASC
+    ";
+        $result = $this->influx->query($query);
+
+        $series  = $result['results'][0]['series'][0] ?? null;
+        $columns = $series['columns'] ?? [];
+        $values  = $series['values'] ?? [];
+
+        $rows = array_map(function ($row) use ($columns) {
+            $assoc = array_combine($columns, $row);
+            if (isset($assoc['time'])) {
+                $assoc['time'] = \Carbon\Carbon::parse($assoc['time'])
+                    ->setTimezone('Asia/Jakarta')
+                    ->format('d M Y H:i:s');
+            }
+            return $assoc;
+        }, $values);
+
+        if (count($rows) === 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'Data Export tidak tersedia untuk rentang waktu yang dipilih.');
+        }
+
+        $rowsArray = array_map(fn($row) => array_values($row), $rows);
+
+        $filename = "arduinoSensor_{$mac_address}_" . now()->format('Y-m-d_H-i-s') . ".xlsx";
+
+        return Excel::download(
+            new \App\Exports\ArduinoExport($rowsArray, $columns),
+            $filename
+        );
     }
 }

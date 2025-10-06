@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
 @section('title', 'Modbus Sensor Charts - ' . $mac_address)
 
@@ -16,7 +16,7 @@
 
                 {{-- Quick Range Buttons --}}
                 <div class="btn-group" role="group">
-                    @foreach (['15m', '1h', '1d', '1w', '1m', '1y'] as $r)
+                    @foreach ($availableRanges as $r)
                         <a href="?range={{ $r }}"
                             class="btn btn-sm btn-outline-dark {{ empty($startDate) && $range == $r ? 'active' : '' }}">
                             {{ strtoupper($r) }}
@@ -24,13 +24,12 @@
                     @endforeach
                 </div>
 
-                {{-- Custom Range Form --}}
                 <form method="GET" class="row g-2 align-items-center">
+                    @csrf
                     <input type="hidden" name="range" value="">
-
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="start_date" value="{{ $startDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" required>
                     </div>
 
                     <div class="col-12 col-md-auto text-center">
@@ -39,14 +38,17 @@
 
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="end_date" value="{{ $endDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" requiared>
                     </div>
 
-                    <div class="col-12 col-md-auto">
-                        <button type="submit" class="btn btn-dark btn-sm w-100">Apply</button>
+                    <div class="col-12 col-md-auto d-flex gap-2">
+                        <button type="submit" class="btn btn-dark btn-sm">Apply</button>
+                        <button type="submit" formaction="{{ url("/sensors/$mac_address/export") }}"
+                            class="btn btn-success btn-sm">
+                            Export
+                        </button>
                     </div>
                 </form>
-
             </div>
         </div>
 

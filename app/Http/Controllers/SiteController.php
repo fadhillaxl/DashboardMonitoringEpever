@@ -13,7 +13,7 @@ class SiteController extends Controller
     public function index()
     {
         $sites = Site::all();
-        return view('sites.index', compact('sites'));
+        return view('dashboard.sites.index', compact('sites'));
     }
 
     /**
@@ -21,7 +21,7 @@ class SiteController extends Controller
      */
     public function create()
     {
-        return view('sites.create');
+        return view('dashboard.sites.create');
     }
 
     /**
@@ -48,7 +48,7 @@ class SiteController extends Controller
     public function show($mac_address)
     {
         $site = Site::where('mac_address', $mac_address)->firstOrFail();
-        return view('sites.show', compact('site'));
+        return view('dashboard.sites.show', compact('site'));
     }
 
     /**
@@ -57,7 +57,7 @@ class SiteController extends Controller
     public function edit($mac_address)
     {
         $site = Site::where('mac_address', $mac_address)->firstOrFail();
-        return view('sites.edit', compact('site'));
+        return view('dashboard.sites.edit', compact('site'));
     }
 
     /**

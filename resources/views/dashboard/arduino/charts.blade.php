@@ -1,14 +1,17 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
-@section('title', 'Epever Charts - ' . $mac_address)
+@section('title', 'Arduino Charts - ' . $mac_address)
 
 @section('content')
-    <h2 class="mb-4 text-start fw-bold">EPEVER Charts - {{ $mac_address }}</h2>
+    <h2 class="mb-4 text-start fw-bold">Arduino Sensors Charts - {{ $mac_address }}</h2>
 
-    <div class="row">
+    <div class="row justify-content-end mb-3">
         <div class="col col-12 col-md-6">
             <div class="mb-3 text-start">
-                <span class="badge bg-dark fs-6">Last Update: {{ $lastRow['time'] ?? '-' }}</span>
+                <span class="badge bg-dark fs-6">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Last Update: {{ $lastRow['time'] ?? '-' }}
+                </span>
             </div>
         </div>
         <div class="col col-12 col-md-6">
@@ -24,13 +27,12 @@
                     @endforeach
                 </div>
 
-                {{-- Custom Range Form --}}
                 <form method="GET" class="row g-2 align-items-center">
+                    @csrf
                     <input type="hidden" name="range" value="">
-
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="start_date" value="{{ $startDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" required>
                     </div>
 
                     <div class="col-12 col-md-auto text-center">
@@ -39,30 +41,34 @@
 
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="end_date" value="{{ $endDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" required>
                     </div>
 
-                    <div class="col-12 col-md-auto">
-                        <button type="submit" class="btn btn-dark btn-sm w-100">Apply</button>
+                    <div class="col-12 col-md-auto d-flex gap-2">
+                        <button type="submit" class="btn btn-dark btn-sm">Apply</button>
+                        <button type="submit" formaction="{{ url("/arduino/$mac_address/export") }}"
+                            class="btn btn-success btn-sm">
+                            Export
+                        </button>
                     </div>
                 </form>
-
             </div>
         </div>
-
     </div>
 
     @if (count($rows) > 0)
         <div class="row g-4">
             @foreach ($chartColumns as $col)
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card bg-white text-dark p-3 shadow-sm">
-                        <h5 class="card-title text-uppercase text-start fw-bold border-bottom pb-2 mb-3">
-                            {{ ucwords(str_replace('_', ' ', $col)) }}
+                    <div class="card bg-white text-dark p-3 shadow-sm h-100">
+                        <h5 class="card-title text-start fw-bold border-bottom pb-2 mb-3">
+                            {{ $labels[$col] ?? ucwords(str_replace('_', ' ', $col)) }}
                         </h5>
                         <canvas id="chart-{{ $col }}"></canvas>
                         @if (isset($lastRow[$col]))
-                            <div class="text-center mt-1 small text-muted">Last Value: {{ $lastRow[$col] }}</div>
+                            <div class="text-center mt-1 small text-muted">
+                                Last Value: {{ $lastRow[$col] }}
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -79,17 +85,19 @@
     <script>
         const rows = @json($rows);
 
-        @foreach ($chartColumns as $col)
-            const ctx{{ $col }} = document.getElementById('chart-{{ $col }}').getContext('2d');
-            const data{{ $col }} = rows.map(r => r['{{ $col }}']);
+        Object.keys(rows[0] || {}).forEach(col => {
+            if (['time', 'mac_address'].includes(col)) return;
 
-            new Chart(ctx{{ $col }}, {
+            const ctx = document.getElementById('chart-' + col).getContext('2d');
+            const data = rows.map(r => r[col]);
+
+            new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: rows.map(() => ''),
+                    labels: rows.map(r => r.time), // timestamp utk tooltip
                     datasets: [{
-                        label: '{{ $col }}',
-                        data: data{{ $col }},
+                        label: col.replaceAll('_', ' '),
+                        data: data,
                         borderColor: '#2b7fff',
                         backgroundColor: 'rgba(219, 234, 254, 1)',
                         fill: true,
@@ -110,8 +118,7 @@
                             }
                         },
                         legend: {
-                            display: false,
-                            position: 'top'
+                            display: false
                         },
                         zoom: {
                             zoom: {
@@ -136,12 +143,12 @@
                         y: {
                             title: {
                                 display: true,
-                                text: '{{ $col }}'
+                                text: col.replaceAll('_', ' ')
                             }
                         }
                     }
                 }
             });
-        @endforeach
+        });
     </script>
 @endpush

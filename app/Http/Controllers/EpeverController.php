@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EpeverExport;
 use App\Models\Site;
 use Illuminate\Http\Request;
 use App\Services\InfluxService;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EpeverController extends Controller
 {
@@ -121,7 +123,7 @@ class EpeverController extends Controller
             'Low' => 'bg-warning',
         ];
 
-        return view('epever.index', compact(
+        return view('dashboard.epever.index', compact(
             'mac_address',
             'data',
             'time',
@@ -191,7 +193,7 @@ class EpeverController extends Controller
         $chartColumns  = array_filter($columns, fn($c) => !in_array($c, ['time', 'mac_address']));
         $availableRanges = ['15m', '1h', '1d', '1w', '1m', '1y'];
 
-        return view('epever.charts', compact(
+        return view('dashboard.epever.charts', compact(
             'mac_address',
             'rows',
             'range',
@@ -202,5 +204,62 @@ class EpeverController extends Controller
             'startDate',
             'endDate'
         ));
+    }
+
+    public function exportExcel($mac_address, Request $request)
+    {
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
+
+        // Kalau kosong, fallback ke range default (misal 1 jam terakhir)
+        if ($startDate) {
+            $start = \Carbon\Carbon::parse($startDate)->toImmutable();
+            $end   = $endDate ? \Carbon\Carbon::parse($endDate)->toImmutable() : $start->copy()->endOfDay();
+        } else {
+            $now   = now()->toImmutable();
+            $start = $now->subHour(); // default 1 jam
+            $end   = $now;
+        }
+
+        $query = "
+        SELECT pv_voltage, pv_current, pv_power,
+               battery_voltage, battery_current, battery_power,
+               load_voltage, load_current, load_power
+        FROM epever_data
+        WHERE mac_address = '$mac_address'
+          AND time >= '{$start->toIso8601String()}'
+          AND time <= '{$end->toIso8601String()}'
+        ORDER BY time ASC
+    ";
+        $result = $this->influx->query($query);
+
+        $series  = $result['results'][0]['series'][0] ?? null;
+        $columns = $series['columns'] ?? [];
+        $values  = $series['values'] ?? [];
+
+        $rows = array_map(function ($row) use ($columns) {
+            $assoc = array_combine($columns, $row);
+            if (isset($assoc['time'])) {
+                $assoc['time'] = \Carbon\Carbon::parse($assoc['time'])
+                    ->setTimezone('Asia/Jakarta')
+                    ->format('d M Y H:i:s');
+            }
+            return $assoc;
+        }, $values);
+
+        if (count($rows) === 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'Data Export tidak tersedia untuk rentang waktu yang dipilih.');
+        }
+
+        $rowsArray = array_map(fn($row) => array_values($row), $rows);
+
+        $filename = "epever_{$mac_address}_" . now()->format('Y-m-d_H-i-s') . ".xlsx";
+
+        return Excel::download(
+            new \App\Exports\EpeverExport($rowsArray, $columns),
+            $filename
+        );
     }
 }

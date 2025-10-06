@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('dashboard.layouts.main')
 
-@section('title', 'Relay Control Charts - ' . $mac_address)
+@section('title', 'Epever Charts - ' . $mac_address)
 
 @section('content')
-    <h2 class="mb-4 text-start fw-bold">Relay Control Charts - {{ $mac_address }}</h2>
+    <h2 class="mb-4 text-start fw-bold">EPEVER Charts - {{ $mac_address }}</h2>
 
     <div class="row">
         <div class="col col-12 col-md-6">
@@ -24,13 +24,12 @@
                     @endforeach
                 </div>
 
-                {{-- Custom Range Form --}}
                 <form method="GET" class="row g-2 align-items-center">
+                    @csrf
                     <input type="hidden" name="range" value="">
-
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="start_date" value="{{ $startDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" required>
                     </div>
 
                     <div class="col-12 col-md-auto text-center">
@@ -39,18 +38,27 @@
 
                     <div class="col-12 col-md-auto">
                         <input type="datetime-local" name="end_date" value="{{ $endDate ?? '' }}"
-                            class="form-control form-control-sm">
+                            class="form-control form-control-sm" required>
                     </div>
 
-                    <div class="col-12 col-md-auto">
-                        <button type="submit" class="btn btn-dark btn-sm w-100">Apply</button>
+                    <div class="col-12 col-md-auto d-flex gap-2">
+                        <button type="submit" class="btn btn-dark btn-sm">Apply</button>
+                        <button type="submit" formaction="{{ url("/epever/$mac_address/export") }}"
+                            class="btn btn-success btn-sm">
+                            Export
+                        </button>
                     </div>
                 </form>
-
             </div>
         </div>
-
     </div>
+
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
     @if (count($rows) > 0)
         <div class="row g-4">
