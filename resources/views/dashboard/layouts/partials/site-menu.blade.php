@@ -1,5 +1,8 @@
 @if (!empty($macs_menu_map) && $currentSite && in_array($currentSite, $macs_menu_map))
     <div class="container">
+        <a href="{{ route('sites.index') }}" class="btn btn-dark">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back
+        </a>
         <div class="d-flex flex-wrap justify-content-start gap-2 p-3 px-0 rounded-3">
             @php
                 $menuMap = [
